@@ -2,6 +2,14 @@
 
 
 [[projects]]
+  digest = "1:5f7414cf41466d4b4dd7ec52b2cd3e481e08cfd11e7e24fef730c0e483e88bb1"
+  name = "github.com/coreos/bbolt"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "63597a96ec0ad9e6d43c3fc81e809909e0237461"
+  version = "v1.3.2"
+
+[[projects]]
   digest = "1:631757aef84dd471e4ba8242ac6affcccfc2c4c6d9c8c45e47b0d8fe8fd82de1"
   name = "github.com/go-chi/chi"
   packages = [
@@ -12,10 +20,19 @@
   revision = "1a6bb108ccf279c8dac6f9bad857d773b4f9b421"
   version = "v4.0.1"
 
+[[projects]]
+  branch = "master"
+  digest = "1:d0e9a312c4610a508569ab25e54d34600b1a96d19b1866ece104ffdf1c1b9d2c"
+  name = "golang.org/x/sys"
+  packages = ["unix"]
+  pruneopts = "UT"
+  revision = "cd391775e71e684db52b63df9affd58269495083"
+
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
+    "github.com/coreos/bbolt",
     "github.com/go-chi/chi",
     "github.com/go-chi/chi/middleware",
   ]
