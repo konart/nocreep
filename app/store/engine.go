@@ -7,9 +7,10 @@ import (
 
 // SourceDataProvider methods to write collected analytics data
 type SourceDataProvider interface {
+	AddDevice(model.Device) error
 }
 
 // DataExplorer methods to access analytics data
 type DataExplorer interface {
-	GetDevice() ([]model.Device, error)
+	GetDevices() ([]model.Device, error)
 }

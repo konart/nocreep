@@ -1,7 +1,10 @@
 package model
 
+// DeviceID type
+type DeviceID string
+
 // Device related info
 type Device struct {
-	ID string `json:"id"`
-	OS string `json:"os"`
+	ID DeviceID `json:"id"`
+	OS string   `json:"os"`
 }
