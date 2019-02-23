@@ -13,6 +13,7 @@ import (
 
 //API service
 type API struct {
+	store.DataInterface
 	db *store.BoltDB
 }
 
@@ -21,7 +22,7 @@ func requestTime(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *API) requestBolt(w http.ResponseWriter, r *http.Request) {
-	devices, err := a.db.GetDevice()
+	devices, err := a.GetDevices()
 	if err != nil {
 		fmt.Fprintf(w, "Something went wrong")
 	}

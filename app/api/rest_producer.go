@@ -17,6 +17,7 @@ func (a *API) recordEvent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	event.CreatedAt = time.Now()
+
 	if err := a.db.RecordEvent(event.DeviceID, event); err != nil {
 		fmt.Println(err)
 		a.respondWithError(w, http.StatusBadRequest, "can't save event")
