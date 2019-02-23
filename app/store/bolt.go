@@ -15,6 +15,7 @@ type BoltDB struct {
 
 const (
 	deviceBucketName = "device"
+	eventBucketName  = "event"
 )
 
 // SetupBoltDB Inits bolt database
@@ -26,7 +27,7 @@ func SetupBoltDB() (*BoltDB, error) {
 		return nil, err
 	}
 
-	topBuckets := []string{deviceBucketName}
+	topBuckets := []string{deviceBucketName, eventBucketName}
 
 	err = db.Update(func(tx *bolt.Tx) error {
 		for _, bktName := range topBuckets {
@@ -54,6 +55,18 @@ func (b *BoltDB) save(bkt *bolt.Bucket, key []byte, value interface{}) (err erro
 	}
 	if err = bkt.Put(key, jdata); err != nil {
 		return fmt.Errorf("failed to save key %s", key)
+	}
+	return nil
+}
+
+func (b *BoltDB) load(bkt *bolt.Bucket, key []byte, res interface{}) error {
+	value := bkt.Get(key)
+	if value == nil {
+		return fmt.Errorf("no value for %s", key)
+	}
+
+	if err := json.Unmarshal(value, &res); err != nil {
+		return fmt.Errorf("failed to unmarshal: %s", err)
 	}
 	return nil
 }
@@ -97,4 +110,75 @@ func (b *BoltDB) GetDevice() (devices []model.Device, err error) {
 	})
 
 	return devices, err
+}
+
+// getDeviceBucket return bucket with all events for device
+func (b *BoltDB) getDeviceBucket(tx *bolt.Tx, deviceID model.DeviceID) (*bolt.Bucket, error) {
+	eventBucket := tx.Bucket([]byte(eventBucketName))
+	if eventBucket == nil {
+		return nil, fmt.Errorf("no bucket %s", eventBucketName)
+	}
+	res := eventBucket.Bucket([]byte(deviceID))
+	if res == nil {
+		return nil, fmt.Errorf("no bucket %s in store", deviceID)
+	}
+	return res, nil
+}
+
+// makeDeviceBucket create new bucket for deviceID as a key. This bucket holds all events for device
+func (b *BoltDB) makeDeviceBucket(tx *bolt.Tx, deviceID model.DeviceID) (*bolt.Bucket, error) {
+	eventBucket := tx.Bucket([]byte(eventBucketName))
+	if eventBucket == nil {
+		return nil, fmt.Errorf("no bucket %s", eventBucketName)
+	}
+	res, err := eventBucket.CreateBucketIfNotExists([]byte(deviceID))
+	if err != nil {
+		return nil, fmt.Errorf("no bucket %s in store", deviceID)
+	}
+	return res, nil
+}
+
+//RecordEvent records event
+func (b *BoltDB) RecordEvent(id model.DeviceID, event model.Event) (err error) {
+	err = b.db.Update(func(tx *bolt.Tx) error {
+		bucket, e := b.makeDeviceBucket(tx, id)
+		if e != nil {
+			return e
+		}
+		if bucket == nil {
+			return fmt.Errorf("bucket %q not found", eventBucketName)
+		}
+
+		if bucket.Get([]byte(event.ID)) != nil {
+			return fmt.Errorf("key %s already in store", event.ID)
+		}
+
+		if e := b.save(bucket, []byte(event.ID), event); e != nil {
+			return fmt.Errorf("failed to put key %s to bucket %s", event.ID, eventBucketName)
+		}
+
+		return nil
+	})
+	return err
+}
+
+//GetEvents retrives all events for provided Device
+func (b *BoltDB) GetEvents(id model.DeviceID) (events []model.Event, err error) {
+	err = b.db.View(func(tx *bolt.Tx) error {
+		bucket, e := b.getDeviceBucket(tx, id)
+		if e != nil {
+			return e
+		}
+
+		return bucket.ForEach(func(k, v []byte) error {
+			event := model.Event{}
+			if e := json.Unmarshal(v, &event); e != nil {
+				return fmt.Errorf("failed to unmarshal: %q", e)
+			}
+			events = append(events, event)
+			return nil
+		})
+	})
+
+	return events, err
 }
