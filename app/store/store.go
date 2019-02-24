@@ -5,10 +5,11 @@ import (
 	"github.com/amebalabs/nocreep/app/model"
 )
 
-// DataInterface ...
-type DataInterface interface {
+// Interface ...
+type Interface interface {
 	DataProducer
 	DataConsumer
+	Close() error
 }
 
 // DataProducer methods to write collected analytics data
