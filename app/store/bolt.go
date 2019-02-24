@@ -45,6 +45,11 @@ func SetupBoltDB() (*BoltDB, error) {
 	return &result, nil
 }
 
+//Close database
+func (b *BoltDB) Close() error {
+	return b.db.Close()
+}
+
 func (b *BoltDB) save(bkt *bolt.Bucket, key []byte, value interface{}) (err error) {
 	if value == nil {
 		return fmt.Errorf("can't save nil value for %s", key)
@@ -69,6 +74,11 @@ func (b *BoltDB) load(bkt *bolt.Bucket, key []byte, res interface{}) error {
 		return fmt.Errorf("failed to unmarshal: %s", err)
 	}
 	return nil
+}
+
+//AddUser TODO
+func (b *BoltDB) AddUser(model.User) (err error) {
+	return err
 }
 
 //AddDevice adds device to store
@@ -107,9 +117,8 @@ func (b *BoltDB) GetDevice(id model.DeviceID) (device model.Device, err error) {
 	return device, err
 }
 
-//GetDevices returns list of all devices
-func (b *BoltDB) GetDevices() (devices []model.Device, err error) {
-
+//GetDevices lookup device by it's id
+func (b *BoltDB) GetDevices(model.User) (devices []model.Device, err error) {
 	err = b.db.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(deviceBucketName))
 		if bucket == nil {
@@ -179,8 +188,13 @@ func (b *BoltDB) RecordEvent(id model.DeviceID, event model.Event) (err error) {
 	return err
 }
 
-//GetEvents retrives all events for provided Device
-func (b *BoltDB) GetEvents(id model.DeviceID) (events []model.Event, err error) {
+//RecordEvents records event
+func (b *BoltDB) RecordEvents(model.DeviceID, []model.Event) (err error) {
+	return err
+}
+
+//GetDeviceEvents retrives all events for provided Device
+func (b *BoltDB) GetDeviceEvents(id model.DeviceID) (events []model.Event, err error) {
 	err = b.db.View(func(tx *bolt.Tx) error {
 		bucket, e := b.getDeviceBucket(tx, id)
 		if e != nil {
@@ -198,4 +212,14 @@ func (b *BoltDB) GetEvents(id model.DeviceID) (events []model.Event, err error) 
 	})
 
 	return events, err
+}
+
+//GetUserEvents TODO
+func (b *BoltDB) GetUserEvents(model.User) (events []model.Event, err error) {
+	return events, err
+}
+
+//StopCollecting TODO
+func (b *BoltDB) StopCollecting(model.DeviceID) (err error) {
+	return err
 }

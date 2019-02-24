@@ -12,7 +12,7 @@ import (
 func (a *API) getEvents(w http.ResponseWriter, r *http.Request) {
 	id := model.DeviceID(chi.URLParam(r, "id"))
 
-	events, err := a.db.GetEvents(id)
+	events, err := a.GetDeviceEvents(id)
 	if err != nil {
 		log.Println(err)
 		a.respondWithError(w, http.StatusNotFound, "No events for this device found")
@@ -22,7 +22,7 @@ func (a *API) getEvents(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *API) getDevices(w http.ResponseWriter, r *http.Request) {
-	devices, err := a.db.GetDevices()
+	devices, err := a.GetDevices(model.User{})
 	if err != nil {
 		log.Println(err)
 		a.respondWithError(w, http.StatusNotFound, "No devices found")
@@ -34,7 +34,7 @@ func (a *API) getDevices(w http.ResponseWriter, r *http.Request) {
 func (a *API) getDevice(w http.ResponseWriter, r *http.Request) {
 	id := model.DeviceID(chi.URLParam(r, "id"))
 
-	devices, err := a.db.GetDevice(id)
+	devices, err := a.GetDevice(id)
 	if err != nil {
 		log.Println(err)
 		a.respondWithError(w, http.StatusNotFound, "No devices found for this id")

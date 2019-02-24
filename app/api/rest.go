@@ -1,10 +1,15 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
+	"strconv"
 	"time"
+
+	"github.com/amebalabs/nocreep/app/model"
 
 	"github.com/amebalabs/nocreep/app/store"
 	"github.com/go-chi/chi"
@@ -13,8 +18,9 @@ import (
 
 //API service
 type API struct {
-	store.DataInterface
-	db *store.BoltDB
+	Version string
+	store.Interface
+	httpServer *http.Server
 }
 
 func requestTime(w http.ResponseWriter, r *http.Request) {
@@ -22,7 +28,7 @@ func requestTime(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *API) requestBolt(w http.ResponseWriter, r *http.Request) {
-	devices, err := a.db.GetDevices()
+	devices, err := a.GetDevices(model.User{})
 	if err != nil {
 		fmt.Fprintf(w, "Something went wrong")
 	}
@@ -40,9 +46,9 @@ func requestSay(w http.ResponseWriter, r *http.Request) {
 }
 
 // Run server
-func (a *API) Run(connection *store.BoltDB) {
-	fmt.Println("Starting server on port :3000")
-	a.db = connection
+func (a *API) Run(port int) {
+	fmt.Printf("Starting server on port :%d", port)
+	a.fakeData()
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 
@@ -62,7 +68,14 @@ func (a *API) Run(connection *store.BoltDB) {
 
 	r.Post("/event", a.recordEvent)
 
-	err := http.ListenAndServe(":3000", r)
+	a.httpServer = &http.Server{
+		Addr:              fmt.Sprintf(":%d", port),
+		Handler:           r,
+		ReadHeaderTimeout: 5 * time.Second,
+		WriteTimeout:      120 * time.Second,
+		IdleTimeout:       30 * time.Second,
+	}
+	err := a.httpServer.ListenAndServe()
 	if err != nil {
 		fmt.Println("ListenAndServe:", err)
 	}
@@ -88,4 +101,27 @@ func (a *API) respondWithJSON(w http.ResponseWriter, code int, payload interface
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
 	w.Write(response)
+}
+
+// Shutdown rest http server
+func (a *API) Shutdown() {
+	log.Print("[WARN] shutdown rest server")
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+
+	if a.httpServer != nil {
+		if err := a.httpServer.Shutdown(ctx); err != nil {
+			log.Printf("[DEBUG] http shutdown error, %s", err)
+		}
+		log.Print("[DEBUG] shutdown http server completed")
+	}
+}
+
+func (a *API) fakeData() {
+	for i := 1; i < 10; i++ {
+		a.AddDevice(
+			model.Device{
+				ID: model.DeviceID(strconv.Itoa(i)),
+				OS: "iOS 11.2 " + strconv.Itoa(i)})
+	}
 }
