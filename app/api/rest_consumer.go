@@ -20,3 +20,25 @@ func (a *API) getEvents(w http.ResponseWriter, r *http.Request) {
 	}
 	a.respondWithJSON(w, http.StatusOK, events)
 }
+
+func (a *API) getDevices(w http.ResponseWriter, r *http.Request) {
+	devices, err := a.db.GetDevices()
+	if err != nil {
+		log.Println(err)
+		a.respondWithError(w, http.StatusNotFound, "No devices found")
+		return
+	}
+	a.respondWithJSON(w, http.StatusOK, devices)
+}
+
+func (a *API) getDevice(w http.ResponseWriter, r *http.Request) {
+	id := model.DeviceID(chi.URLParam(r, "id"))
+
+	devices, err := a.db.GetDevice(id)
+	if err != nil {
+		log.Println(err)
+		a.respondWithError(w, http.StatusNotFound, "No devices found for this id")
+		return
+	}
+	a.respondWithJSON(w, http.StatusOK, devices)
+}

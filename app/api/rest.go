@@ -22,7 +22,7 @@ func requestTime(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *API) requestBolt(w http.ResponseWriter, r *http.Request) {
-	devices, err := a.GetDevices()
+	devices, err := a.db.GetDevices()
 	if err != nil {
 		fmt.Fprintf(w, "Something went wrong")
 	}
@@ -52,8 +52,8 @@ func (a *API) Run(connection *store.BoltDB) {
 		r.Get("/", requestSay)
 	})
 	r.Route("/devices", func(r chi.Router) {
-		r.Get("/{deviceid}", a.requestBolt)
-		r.Get("/", a.requestBolt)
+		r.Get("/{id}", a.getDevice)
+		r.Get("/", a.getDevices)
 	})
 
 	r.Route("/events", func(r chi.Router) {

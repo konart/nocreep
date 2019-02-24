@@ -90,8 +90,25 @@ func (b *BoltDB) AddDevice(device model.Device) (err error) {
 	return err
 }
 
-//GetDevice lookup device by it's id
-func (b *BoltDB) GetDevice() (devices []model.Device, err error) {
+//GetDevice lookup device by its id
+func (b *BoltDB) GetDevice(id model.DeviceID) (device model.Device, err error) {
+	err = b.db.View(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket([]byte(deviceBucketName))
+		if bucket == nil {
+			return fmt.Errorf("bucket %q not found", deviceBucketName)
+		}
+
+		deviceJSON := bucket.Get([]byte(id))
+		if e := json.Unmarshal(deviceJSON, &device); e != nil {
+			return fmt.Errorf("failed to unmarshal: %q", e)
+		}
+		return nil
+	})
+	return device, err
+}
+
+//GetDevices returns list of all devices
+func (b *BoltDB) GetDevices() (devices []model.Device, err error) {
 
 	err = b.db.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(deviceBucketName))
